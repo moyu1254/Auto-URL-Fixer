@@ -1,0 +1,10 @@
+[project]
+name = "auto-url-fixer"
+version = "0.1.0"
+description = "Clipboard watcher that rewrites copied URLs to embed-friendly fixer hosts."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+auto-url-fixer = "auto_url_fixer.cli:main"
+
