@@ -225,7 +225,3 @@ dist\Auto URL Fixer\
 ### 変換されない URL がある
 
 `config.json` を使っている場合、該当ルールの `enabled` が `true` になっているか確認してください。また、対象ホストが `hosts` または `host_suffix` に含まれている必要があります。
-
-## 参考
-
-- [全プロジェクトで重宝されるイケてるREADMEを作成しよう！](https://qiita.com/shun198/items/c983c713452c041ef787)
