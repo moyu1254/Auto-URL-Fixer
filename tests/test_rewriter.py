@@ -17,7 +17,7 @@ class RewriteUrlTests(unittest.TestCase):
     def test_rewrites_x(self) -> None:
         self.assertEqual(
             rewrite_url("https://x.com/example/status/123?s=20", self.rules),
-            "https://fixupx.com/example/status/123?s=20",
+            "https://fxtwitter.com/example/status/123?s=20",
         )
 
     def test_rewrites_multiple_urls_in_text(self) -> None:
@@ -41,7 +41,7 @@ class RewriteUrlTests(unittest.TestCase):
         self.assertTrue(changed)
         self.assertEqual(
             rewritten,
-            "https://fixupx.com/1nCoin/status/2064708177816657987?s=20",
+            "https://fxtwitter.com/1nCoin/status/2064708177816657987?s=20",
         )
 
     def test_preserves_trailing_punctuation(self) -> None:
