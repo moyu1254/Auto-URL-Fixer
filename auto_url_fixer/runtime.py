@@ -5,7 +5,6 @@ import signal
 import subprocess
 import sys
 import time
-from csv import reader
 from pathlib import Path
 
 
@@ -58,6 +57,12 @@ def unregister_current_process(pid: int | None = None) -> None:
         pid_file.unlink()
 
 
+def clear_pid_file() -> None:
+    pid_file = get_pid_file()
+    if pid_file.exists():
+        pid_file.unlink()
+
+
 def read_pid() -> int | None:
     pid_file = get_pid_file()
     if not pid_file.exists():
@@ -96,6 +101,28 @@ def is_process_running(pid: int) -> bool:
     return True
 
 
+def is_running_instance() -> bool:
+    return bool(_collect_target_pids())
+
+
+def start_watcher_instance(config_path: Path | None = None) -> bool:
+    if is_running_instance():
+        return False
+
+    command = _build_watcher_command(config_path)
+    create_no_window = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    detached_process = getattr(subprocess, "DETACHED_PROCESS", 0)
+    subprocess.Popen(
+        command,
+        cwd=get_application_dir(),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=create_no_window | detached_process,
+    )
+    return True
+
+
 def stop_running_instance(timeout_seconds: float = 2.0) -> bool:
     request_stop()
 
@@ -117,7 +144,7 @@ def stop_running_instance(timeout_seconds: float = 2.0) -> bool:
             _terminate_process(pid)
 
     clear_stop_request()
-    unregister_current_process()
+    clear_pid_file()
     return not any(is_process_running(pid) for pid in target_pids)
 
 
@@ -146,7 +173,7 @@ def get_startup_entry_path() -> Path:
 
 
 def build_startup_vbs() -> str:
-    command = get_hidden_launch_command()
+    command = get_hidden_launch_command(("--watch",))
     working_dir = get_application_dir()
     escaped_dir = str(working_dir).replace('"', '""')
     escaped_command = command.replace('"', '""')
@@ -189,20 +216,36 @@ def _collect_target_pids() -> set[int]:
     if pid is not None and pid != current_pid and is_process_running(pid):
         target_pids.add(pid)
 
-    if getattr(sys, "frozen", False):
-        image_name = Path(sys.executable).name
-        for candidate_pid in _list_process_ids_by_image_name(image_name):
-            if candidate_pid != current_pid:
-                target_pids.add(candidate_pid)
+    for candidate_pid in _list_watcher_process_ids_by_command_line():
+        if candidate_pid != current_pid and is_process_running(candidate_pid):
+            target_pids.add(candidate_pid)
 
     return target_pids
 
 
-def _list_process_ids_by_image_name(image_name: str) -> set[int]:
+def _build_watcher_command(config_path: Path | None = None) -> list[str]:
+    if getattr(sys, "frozen", False):
+        command = [str(Path(sys.executable).resolve()), "--watch"]
+    else:
+        command = [sys.executable, "-m", "auto_url_fixer", "--watch"]
+
+    if config_path is not None:
+        command.extend(("--config", str(config_path)))
+
+    return command
+
+
+def _list_watcher_process_ids_by_command_line() -> set[int]:
     create_no_window = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    script = (
+        "Get-CimInstance Win32_Process | "
+        "Where-Object { $_.CommandLine -and $_.CommandLine -match '--watch' -and "
+        "($_.CommandLine -match 'Auto URL Fixer|auto_url_fixer') } | "
+        "ForEach-Object { $_.ProcessId }"
+    )
     try:
         result = subprocess.run(
-            ["tasklist", "/FO", "CSV", "/NH"],
+            ["powershell", "-NoProfile", "-Command", script],
             capture_output=True,
             text=True,
             check=False,
@@ -214,15 +257,10 @@ def _list_process_ids_by_image_name(image_name: str) -> set[int]:
     if result.returncode != 0:
         return set()
 
-    target_name = image_name.lower()
     pids: set[int] = set()
-    for row in reader(result.stdout.splitlines()):
-        if len(row) < 2:
-            continue
-        if row[0].lower() != target_name:
-            continue
+    for line in result.stdout.splitlines():
         try:
-            pids.add(int(row[1]))
+            pids.add(int(line.strip()))
         except ValueError:
             continue
     return pids
