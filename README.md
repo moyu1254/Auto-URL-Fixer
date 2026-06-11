@@ -14,7 +14,7 @@
 
 ## クイックスタート
 
-通常利用では Python は不要です。配布フォルダ内の `Auto URL Fixer.exe` を開くと操作パネルが表示されます。
+通常利用では Python は不要です。配布フォルダ `dist\Auto URL Fixer\` 内の `Auto URL Fixer.exe` を開くと操作パネルが表示されます。
 
 操作パネルから次の操作ができます。
 
@@ -47,6 +47,8 @@ https://fxtwitter.com/example/status/123
 - `config.example.json`: 設定ファイルのサンプル
 
 配布フォルダでは基本的に `Auto URL Fixer.exe` だけを操作します。`_internal` フォルダは exe の実行に必要なので、削除せず同じ場所に置いてください。設定を変更したい場合だけ `config.example.json` を `config.json` にコピーしてください。
+
+`dist\Auto URL Fixer.exe` のように `dist` 直下に単体 exe がある場合、それは古い `onefile` 版です。終了時に `Failed to remove temporary directory: ...\_MEI...` の警告が出る原因になるため、使わずに削除してください。
 
 ## 設定ファイル
 
@@ -119,6 +121,8 @@ build_windows_exe.bat
 - `_internal`
 - `config.example.json`
 - `README.md`
+
+ビルド時に古い `dist\Auto URL Fixer.exe` が残っている場合は自動削除します。利用する exe は必ず `dist\Auto URL Fixer\Auto URL Fixer.exe` です。
 
 ## テスト
 
