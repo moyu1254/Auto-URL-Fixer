@@ -36,13 +36,20 @@ def run_control_panel() -> int:
         root.after(500, refresh_status)
         root.after(1500, refresh_status)
 
+    def poll_status() -> None:
+        refresh_status()
+        root.after(1000, poll_status)
+
     def start() -> None:
         if start_watcher_instance():
             refresh_status_after_process_change()
             messagebox.showinfo("Auto URL Fixer", "Started.")
-        else:
+        elif is_running_instance():
             refresh_status_after_process_change()
             messagebox.showinfo("Auto URL Fixer", "Already running.")
+        else:
+            refresh_status_after_process_change()
+            messagebox.showwarning("Auto URL Fixer", "Failed to start.")
 
     def stop() -> None:
         if stop_running_instance():
@@ -76,6 +83,6 @@ def run_control_panel() -> int:
     close_button = tk.Button(frame, text="Close", width=35, command=root.destroy)
     close_button.grid(row=4, column=0, columnspan=2, padx=4, pady=(10, 0))
 
-    refresh_status()
+    poll_status()
     root.mainloop()
     return 0
