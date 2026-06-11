@@ -87,7 +87,7 @@ py -m auto_url_fixer --watch --config config.json
 
 | 対象 | 変換例 |
 | --- | --- |
-| X / Twitter | `twitter.com` -> `fxtwitter.com`, `x.com` -> `fixupx.com` |
+| X / Twitter | `twitter.com` -> `fxtwitter.com`, `x.com` -> `fxtwitter.com` |
 | pixiv | `pixiv.net` -> `phixiv.net` |
 | Instagram | `instagram.com` -> `ddinstagram.com` |
 | TikTok | `tiktok.com` -> `tnktok.com` |
