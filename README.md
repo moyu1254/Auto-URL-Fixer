@@ -88,7 +88,7 @@ py -m unittest discover -s tests
 ## 停止とスタートアップ
 
 実行中の Auto URL Fixer を止めるには `stop_auto_url_fixer.bat` を実行してください。
-通常は停止要求を送って終了し、反応しない場合は保存済み PID を使って強制停止します。
+通常は停止要求を送り、PID ファイルが無い古い起動でも `auto_url_fixer` を実行中の Python プロセスを探して停止します。
 
 Windows ログイン時に自動起動したい場合は `enable_startup_auto_url_fixer.bat` を実行してください。
 スタートアップ登録を解除したい場合は `disable_startup_auto_url_fixer.bat` を実行してください。
