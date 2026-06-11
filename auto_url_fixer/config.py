@@ -136,4 +136,3 @@ def _default_config_data() -> dict[str, Any]:
             },
         ],
     }
-
