@@ -18,9 +18,12 @@ copy /Y "dist\Auto URL Fixer.exe" "dist\Auto URL Fixer\Auto URL Fixer.exe" >nul 
 copy /Y "start_auto_url_fixer.bat" "dist\Auto URL Fixer\" >nul || goto :error
 copy /Y "start_auto_url_fixer.vbs" "dist\Auto URL Fixer\" >nul || goto :error
 copy /Y "stop_auto_url_fixer.bat" "dist\Auto URL Fixer\" >nul || goto :error
+copy /Y "stop_auto_url_fixer.vbs" "dist\Auto URL Fixer\" >nul || goto :error
 copy /Y "stop_auto_url_fixer.ps1" "dist\Auto URL Fixer\" >nul || goto :error
 copy /Y "enable_startup_auto_url_fixer.bat" "dist\Auto URL Fixer\" >nul || goto :error
+copy /Y "enable_startup_auto_url_fixer.vbs" "dist\Auto URL Fixer\" >nul || goto :error
 copy /Y "disable_startup_auto_url_fixer.bat" "dist\Auto URL Fixer\" >nul || goto :error
+copy /Y "disable_startup_auto_url_fixer.vbs" "dist\Auto URL Fixer\" >nul || goto :error
 copy /Y "config.example.json" "dist\Auto URL Fixer\" >nul || goto :error
 copy /Y "README.md" "dist\Auto URL Fixer\" >nul || goto :error
 
