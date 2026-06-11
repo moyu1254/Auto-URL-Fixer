@@ -11,6 +11,7 @@ from .runtime import (
     disable_startup,
     enable_startup,
     get_application_dir,
+    is_running_instance,
     register_current_process,
     start_watcher_instance,
     stop_requested,
@@ -88,8 +89,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.start:
         started = start_watcher_instance(args.config)
-        if not started:
+        if not started and is_running_instance():
             _safe_print("Auto URL Fixer is already running.")
+        elif not started:
+            _safe_print("Auto URL Fixer failed to start.")
         return 0
 
     if not args.watch and not args.once:
@@ -99,31 +102,45 @@ def main(argv: list[str] | None = None) -> int:
 
     config = load_config(_resolve_config_path(args.config))
 
-    try:
-        clipboard = create_clipboard()
-    except ClipboardError as exc:
-        _safe_print(f"Clipboard initialization failed: {exc}")
-        return 1
-
-    watcher = ClipboardWatcher(
-        clipboard=clipboard,
-        rules=config.enabled_rules,
-        poll_interval_seconds=config.poll_interval_seconds,
-        log_rewrites=config.log_rewrites,
-        on_rewrite=_print_rewrite,
-        stop_checker=stop_requested,
-    )
-
     registered_pid: int | None = None
+    clipboard = None
 
     try:
         if args.once:
+            try:
+                clipboard = create_clipboard()
+            except ClipboardError as exc:
+                _safe_print(f"Clipboard initialization failed: {exc}")
+                return 1
+
+            watcher = ClipboardWatcher(
+                clipboard=clipboard,
+                rules=config.enabled_rules,
+                poll_interval_seconds=config.poll_interval_seconds,
+                log_rewrites=config.log_rewrites,
+                on_rewrite=_print_rewrite,
+                stop_checker=stop_requested,
+            )
             changed = watcher.rewrite_current_clipboard_once()
             if not changed:
                 _safe_print("No supported URL found in the current clipboard.")
             return 0
 
         registered_pid = register_current_process()
+        try:
+            clipboard = create_clipboard()
+        except ClipboardError as exc:
+            _safe_print(f"Clipboard initialization failed: {exc}")
+            return 1
+
+        watcher = ClipboardWatcher(
+            clipboard=clipboard,
+            rules=config.enabled_rules,
+            poll_interval_seconds=config.poll_interval_seconds,
+            log_rewrites=config.log_rewrites,
+            on_rewrite=_print_rewrite,
+            stop_checker=stop_requested,
+        )
         _safe_print("Auto URL Fixer is running. Press Ctrl+C to stop.")
         watcher.run_forever()
     except AlreadyRunningError as exc:
@@ -133,7 +150,8 @@ def main(argv: list[str] | None = None) -> int:
         _safe_print("\nStopped.")
     finally:
         unregister_current_process(registered_pid)
-        clipboard.close()
+        if clipboard is not None:
+            clipboard.close()
 
     return 0
 
