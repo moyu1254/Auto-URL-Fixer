@@ -8,3 +8,5 @@ dependencies = []
 [project.scripts]
 auto-url-fixer = "auto_url_fixer.cli:main"
 
+[project.optional-dependencies]
+build = ["pyinstaller>=6.0"]
