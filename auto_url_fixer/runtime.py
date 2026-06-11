@@ -7,6 +7,9 @@ import sys
 import time
 from pathlib import Path
 
+if sys.platform == "win32":
+    import ctypes
+
 
 APP_DIR_NAME = "AutoURLFixer"
 PID_FILE_NAME = "auto_url_fixer.pid"
@@ -94,6 +97,9 @@ def is_process_running(pid: int) -> bool:
     if pid <= 0:
         return False
 
+    if sys.platform == "win32":
+        return _is_process_running_windows(pid)
+
     try:
         os.kill(pid, 0)
     except OSError:
@@ -112,7 +118,7 @@ def start_watcher_instance(config_path: Path | None = None) -> bool:
     command = _build_watcher_command(config_path)
     create_no_window = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     detached_process = getattr(subprocess, "DETACHED_PROCESS", 0)
-    subprocess.Popen(
+    process = subprocess.Popen(
         command,
         cwd=get_application_dir(),
         stdin=subprocess.DEVNULL,
@@ -120,7 +126,7 @@ def start_watcher_instance(config_path: Path | None = None) -> bool:
         stderr=subprocess.DEVNULL,
         creationflags=create_no_window | detached_process,
     )
-    return True
+    return _wait_for_started_process(process)
 
 
 def stop_running_instance(timeout_seconds: float = 2.0) -> bool:
@@ -271,3 +277,44 @@ def _terminate_process(pid: int) -> None:
         os.kill(pid, signal.SIGTERM)
     except OSError:
         pass
+
+
+def _wait_for_started_process(process: subprocess.Popen[bytes], timeout_seconds: float = 3.0) -> bool:
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        if process.poll() is not None:
+            return False
+        if is_running_instance():
+            return True
+        time.sleep(0.1)
+    return is_running_instance() or is_process_running(process.pid)
+
+
+def _is_process_running_windows(pid: int) -> bool:
+    synchronize = 0x00100000
+    process_query_limited_information = 0x1000
+    still_active = 259
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [ctypes.c_ulong, ctypes.c_bool, ctypes.c_ulong]
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    kernel32.GetExitCodeProcess.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
+    kernel32.GetExitCodeProcess.restype = ctypes.c_bool
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.restype = ctypes.c_bool
+
+    handle = kernel32.OpenProcess(
+        synchronize | process_query_limited_information,
+        False,
+        pid,
+    )
+    if not handle:
+        return False
+
+    exit_code = ctypes.c_ulong()
+    try:
+        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+            return False
+        return exit_code.value == still_active
+    finally:
+        kernel32.CloseHandle(handle)
