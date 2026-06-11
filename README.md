@@ -2,37 +2,56 @@
 
 クリップボードにコピーされた URL を監視し、Discord などで展開しやすい fixer 系 URL に自動変換する小さなツールです。
 
-## できること
+## 概要
 
 - クリップボード内のテキストから URL を検出
 - 対応サービスのホスト名だけを変換
 - 複数 URL を含むテキストにも対応
-- 変換ルールは `config.example.json` で変更可能
-- 追加候補のルールは初期状態では無効化
+- ターミナルを表示せずにバックグラウンド起動可能
+- 停止用バッチとスタートアップ登録用バッチを同梱
+- 変換ルールは `config.example.json` をもとにカスタマイズ可能
 
-## 使い方
+## クイックスタート
 
 Python 3.10 以上を想定しています。外部ライブラリは不要です。
+
+ターミナルで起動する場合:
 
 ```powershell
 py -m auto_url_fixer
 ```
 
-起動後、たとえば次の URL をコピーすると:
+ターミナルを表示せずに起動する場合:
+
+`start_auto_url_fixer.vbs` をダブルクリックしてください。
+
+起動後、たとえば次の URL をコピーすると、
 
 ```text
 https://twitter.com/example/status/123
 ```
 
-クリップボード内容が自動で次のように置き換わります:
+クリップボード内容が次のように置き換わります。
 
 ```text
 https://fxtwitter.com/example/status/123
 ```
 
-停止するにはターミナルで `Ctrl+C` を押してください。
+停止方法:
 
-## 設定ファイルを使う
+- ターミナル起動中は `Ctrl+C`
+- バックグラウンド起動中は `stop_auto_url_fixer.bat`
+
+## 同梱ファイル
+
+- `start_auto_url_fixer.vbs`: ターミナルを表示せずに起動
+- `start_auto_url_fixer.bat`: 上記 VBS ランチャーを呼び出す補助バッチ
+- `stop_auto_url_fixer.bat`: 実行中の Auto URL Fixer を停止
+- `enable_startup_auto_url_fixer.bat`: Windows ログイン時の自動起動を有効化
+- `disable_startup_auto_url_fixer.bat`: スタートアップ登録を解除
+- `config.example.json`: 設定ファイルのサンプル
+
+## 設定ファイル
 
 まずサンプル設定をコピーします。
 
@@ -46,7 +65,7 @@ Copy-Item config.example.json config.json
 py -m auto_url_fixer --config config.json
 ```
 
-各ルールは次のような形式です。
+設定例:
 
 ```json
 {
@@ -59,7 +78,13 @@ py -m auto_url_fixer --config config.json
 
 `enabled` を `false` にすると、そのルールは使われません。
 
-## 既定で有効な主な変換
+主な設定項目:
+
+- `poll_interval_seconds`: クリップボード監視間隔
+- `log_rewrites`: 変換内容をログ出力するかどうか
+- `rules`: 変換ルール一覧
+
+## 既定で有効な変換
 
 | 対象 | 変換例 |
 | --- | --- |
@@ -71,7 +96,14 @@ py -m auto_url_fixer --config config.json
 | Tumblr | `tumblr.com` -> `tpmblr.com` |
 | Bluesky | `bsky.app` -> `fxbsky.app` |
 
-追加候補として `tfxktok.com`, `tiktokez.com`, `rxyddit.com`, `instagramez.com`, `fixthreads.net`, `fxtwitch.tv` などのルールもサンプル設定に入っていますが、状態が不安定または closed source とされるものがあるため初期状態では無効にしています。
+追加候補として `tfxktok.com`, `tiktokez.com`, `rxyddit.com`, `instagramez.com`, `fixthreads.net`, `fxtwitch.tv` などのルールも `config.example.json` に含めていますが、初期状態では `enabled: false` にしています。
+
+## 停止とスタートアップ
+
+- `stop_auto_url_fixer.bat` は、まず停止要求を送り、その後 `auto_url_fixer` を実行中の Python プロセスを探して停止します。
+- PID ファイルが無い古い起動でも停止できるようにしています。
+- `enable_startup_auto_url_fixer.bat` を実行すると、Windows の Startup フォルダに起動用バッチを作成します。
+- `disable_startup_auto_url_fixer.bat` を実行すると、そのスタートアップ登録を削除します。
 
 ## テスト
 
@@ -79,16 +111,7 @@ py -m auto_url_fixer --config config.json
 py -m unittest discover -s tests
 ```
 
-## ダブルクリックで起動
+## 補足
 
-ターミナルを表示せずに起動したい場合は `start_auto_url_fixer.vbs` をダブルクリックしてください。
-
-`start_auto_url_fixer.bat` も同じ非表示起動用ランチャーを呼び出すので、従来どおり使えます。
-
-## 停止とスタートアップ
-
-実行中の Auto URL Fixer を止めるには `stop_auto_url_fixer.bat` を実行してください。
-通常は停止要求を送り、PID ファイルが無い古い起動でも `auto_url_fixer` を実行中の Python プロセスを探して停止します。
-
-Windows ログイン時に自動起動したい場合は `enable_startup_auto_url_fixer.bat` を実行してください。
-スタートアップ登録を解除したい場合は `disable_startup_auto_url_fixer.bat` を実行してください。
+- すでに別の Auto URL Fixer が動いている場合、新しい起動は多重起動を避けるため失敗します。
+- バックグラウンド起動時は標準出力が見えないため、必要ならターミナル起動で動作確認してください。
