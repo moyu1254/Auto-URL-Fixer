@@ -46,7 +46,7 @@ https://fxtwitter.com/example/status/123
 - `Auto URL Fixer.exe`: Python 不要で実行できる Windows 配布用実行ファイル
 - `config.example.json`: 設定ファイルのサンプル
 
-配布フォルダは基本的にこの 2 ファイルだけで使えます。設定を変更したい場合だけ `config.example.json` を `config.json` にコピーしてください。`README.md` は必要に応じて同梱してください。
+配布フォルダでは基本的に `Auto URL Fixer.exe` だけを操作します。`_internal` フォルダは exe の実行に必要なので、削除せず同じ場所に置いてください。設定を変更したい場合だけ `config.example.json` を `config.json` にコピーしてください。
 
 ## 設定ファイル
 
@@ -116,6 +116,7 @@ build_windows_exe.bat
 成功すると `dist\Auto URL Fixer\` に次の配布セットを出力します。
 
 - `Auto URL Fixer.exe`
+- `_internal`
 - `config.example.json`
 - `README.md`
 
@@ -130,3 +131,4 @@ py -m unittest discover -s tests
 - すでに別の Auto URL Fixer が動いている場合、新しい起動は多重起動を避けるため失敗します。
 - バックグラウンド起動時は標準出力が見えないため、必要ならターミナル起動で動作確認してください。
 - 配布用 `Auto URL Fixer.exe` は `console=False` でビルドするため、直接実行してもターミナルは表示されません。
+- PyInstaller の一時展開フォルダ削除エラーを避けるため、配布版は `onefile` ではなく `onedir` 形式でビルドします。
