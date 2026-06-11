@@ -13,9 +13,10 @@ python -m pip install --upgrade pip || goto :error
 python -m pip install pyinstaller || goto :error
 pyinstaller --clean --noconfirm "auto_url_fixer.spec" || goto :error
 
-if exist "dist\Auto URL Fixer" rmdir /S /Q "dist\Auto URL Fixer"
-if not exist "dist\Auto URL Fixer" mkdir "dist\Auto URL Fixer"
-copy /Y "dist\Auto URL Fixer.exe" "dist\Auto URL Fixer\Auto URL Fixer.exe" >nul || goto :error
+if not exist "dist\Auto URL Fixer\Auto URL Fixer.exe" (
+    echo Built executable was not found.
+    goto :error
+)
 copy /Y "config.example.json" "dist\Auto URL Fixer\" >nul || goto :error
 copy /Y "README.md" "dist\Auto URL Fixer\" >nul || goto :error
 
