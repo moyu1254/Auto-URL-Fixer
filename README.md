@@ -7,23 +7,24 @@
 - クリップボード内のテキストから URL を検出
 - 対応サービスのホスト名だけを変換
 - 複数 URL を含むテキストにも対応
+- Python を別途インストールしなくても `.exe` 配布で利用可能
 - ターミナルを表示せずにバックグラウンド起動可能
 - 停止用バッチとスタートアップ登録用バッチを同梱
 - 変換ルールは `config.example.json` をもとにカスタマイズ可能
 
 ## クイックスタート
 
-Python 3.10 以上を想定しています。外部ライブラリは不要です。
+通常利用では Python は不要です。配布フォルダ内の `Auto URL Fixer.exe` と同梱スクリプトをそのまま使えます。
 
-ターミナルで起動する場合:
+配布版をバックグラウンド起動する場合:
+
+`start_auto_url_fixer.vbs` をダブルクリックしてください。
+
+開発中に Python で直接起動する場合:
 
 ```powershell
 py -m auto_url_fixer
 ```
-
-ターミナルを表示せずに起動する場合:
-
-`start_auto_url_fixer.vbs` をダブルクリックしてください。
 
 起動後、たとえば次の URL をコピーすると、
 
@@ -49,6 +50,7 @@ https://fxtwitter.com/example/status/123
 - `stop_auto_url_fixer.bat`: 実行中の Auto URL Fixer を停止
 - `enable_startup_auto_url_fixer.bat`: Windows ログイン時の自動起動を有効化
 - `disable_startup_auto_url_fixer.bat`: スタートアップ登録を解除
+- `Auto URL Fixer.exe`: Python 不要で実行できる Windows 配布用実行ファイル
 - `config.example.json`: 設定ファイルのサンプル
 
 ## 設定ファイル
@@ -100,10 +102,25 @@ py -m auto_url_fixer --config config.json
 
 ## 停止とスタートアップ
 
-- `stop_auto_url_fixer.bat` は、まず停止要求を送り、その後 `auto_url_fixer` を実行中の Python プロセスを探して停止します。
+- `stop_auto_url_fixer.bat` は、まず停止要求を送り、その後 `Auto URL Fixer.exe` または `auto_url_fixer` を実行中のプロセスを探して停止します。
 - PID ファイルが無い古い起動でも停止できるようにしています。
 - `enable_startup_auto_url_fixer.bat` を実行すると、Windows の Startup フォルダに起動用バッチを作成します。
 - `disable_startup_auto_url_fixer.bat` を実行すると、そのスタートアップ登録を削除します。
+
+## 配布用ビルド
+
+開発者向けに、Windows 配布用 `.exe` を作るバッチを同梱しています。
+
+```powershell
+build_windows_exe.bat
+```
+
+成功すると `dist\Auto URL Fixer\` に次の配布セットを出力します。
+
+- `Auto URL Fixer.exe`
+- 起動 / 停止 / スタートアップ操作用の `.bat` / `.vbs` / `.ps1`
+- `config.example.json`
+- `README.md`
 
 ## テスト
 
@@ -115,3 +132,4 @@ py -m unittest discover -s tests
 
 - すでに別の Auto URL Fixer が動いている場合、新しい起動は多重起動を避けるため失敗します。
 - バックグラウンド起動時は標準出力が見えないため、必要ならターミナル起動で動作確認してください。
+- `start_auto_url_fixer.vbs` は `Auto URL Fixer.exe` を最優先で起動し、見つからない場合だけ開発用に Python 実行へフォールバックします。
