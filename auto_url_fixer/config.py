@@ -81,10 +81,10 @@ def _default_config_data() -> dict[str, Any]:
                 "target_host": "fxtwitter.com",
             },
             {
-                "name": "X to FixupX",
+                "name": "X to FxTwitter",
                 "enabled": True,
                 "hosts": ["x.com", "www.x.com"],
-                "target_host": "fixupx.com",
+                "target_host": "fxtwitter.com",
             },
             {
                 "name": "pixiv to phixiv",
