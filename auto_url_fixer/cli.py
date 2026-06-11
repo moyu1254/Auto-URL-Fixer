@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from .clipboard import ClipboardError, create_clipboard
 from .config import load_config
+from .runtime import AlreadyRunningError, stop_requested, register_current_process, unregister_current_process
 from .watcher import ClipboardWatcher
 
 
@@ -34,7 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         clipboard = create_clipboard()
     except ClipboardError as exc:
-        print(f"Clipboard initialization failed: {exc}")
+        _safe_print(f"Clipboard initialization failed: {exc}")
         return 1
 
     watcher = ClipboardWatcher(
@@ -42,20 +44,40 @@ def main(argv: list[str] | None = None) -> int:
         rules=config.enabled_rules,
         poll_interval_seconds=config.poll_interval_seconds,
         log_rewrites=config.log_rewrites,
+        on_rewrite=_print_rewrite,
+        stop_checker=stop_requested,
     )
+
+    registered_pid: int | None = None
 
     try:
         if args.once:
             changed = watcher.rewrite_current_clipboard_once()
             if not changed:
-                print("No supported URL found in the current clipboard.")
+                _safe_print("No supported URL found in the current clipboard.")
             return 0
 
-        print("Auto URL Fixer is running. Press Ctrl+C to stop.")
+        registered_pid = register_current_process()
+        _safe_print("Auto URL Fixer is running. Press Ctrl+C to stop.")
         watcher.run_forever()
+    except AlreadyRunningError as exc:
+        _safe_print(str(exc))
+        return 1
     except KeyboardInterrupt:
-        print("\nStopped.")
+        _safe_print("\nStopped.")
     finally:
+        unregister_current_process(registered_pid)
         clipboard.close()
 
     return 0
+
+
+def _print_rewrite(original: str, rewritten: str) -> None:
+    _safe_print(f"Rewritten: {original} -> {rewritten}")
+
+
+def _safe_print(message: str) -> None:
+    stream = sys.stdout
+    if stream is None:
+        return
+    print(message, file=stream)
