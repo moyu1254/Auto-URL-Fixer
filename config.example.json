@@ -9,10 +9,10 @@
       "target_host": "fxtwitter.com"
     },
     {
-      "name": "X to FixupX",
+      "name": "X to FxTwitter",
       "enabled": true,
       "hosts": ["x.com", "www.x.com"],
-      "target_host": "fixupx.com"
+      "target_host": "fxtwitter.com"
     },
     {
       "name": "pixiv to phixiv",
