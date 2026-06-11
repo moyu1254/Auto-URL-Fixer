@@ -6,7 +6,15 @@ from pathlib import Path
 
 from .clipboard import ClipboardError, create_clipboard
 from .config import load_config
-from .runtime import AlreadyRunningError, stop_requested, register_current_process, unregister_current_process
+from .runtime import (
+    AlreadyRunningError,
+    disable_startup,
+    enable_startup,
+    register_current_process,
+    stop_requested,
+    stop_running_instance,
+    unregister_current_process,
+)
 from .watcher import ClipboardWatcher
 
 
@@ -26,11 +34,46 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Rewrite the current clipboard content once and exit.",
     )
+    parser.add_argument(
+        "--stop",
+        action="store_true",
+        help="Stop the running Auto URL Fixer instance.",
+    )
+    parser.add_argument(
+        "--enable-startup",
+        action="store_true",
+        help="Enable Auto URL Fixer at Windows logon.",
+    )
+    parser.add_argument(
+        "--disable-startup",
+        action="store_true",
+        help="Disable Auto URL Fixer at Windows logon.",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+
+    if args.stop:
+        stopped = stop_running_instance()
+        if not stopped:
+            _safe_print("No running Auto URL Fixer instance was found.")
+        return 0
+
+    if args.enable_startup:
+        startup_path = enable_startup()
+        _safe_print(f"Startup enabled: {startup_path}")
+        return 0
+
+    if args.disable_startup:
+        removed = disable_startup()
+        if removed:
+            _safe_print("Startup disabled.")
+        else:
+            _safe_print("No startup entry was found.")
+        return 0
+
     config = load_config(args.config)
 
     try:
