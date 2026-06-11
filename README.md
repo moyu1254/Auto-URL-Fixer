@@ -1,91 +1,73 @@
 # Auto URL Fixer
 
-クリップボードにコピーされた URL を監視し、Discord などで展開しやすい fixer 系 URL に自動変換する小さなツールです。
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white)
+![PyInstaller](https://img.shields.io/badge/PyInstaller-onedir-2B5B84)
+![Dependencies](https://img.shields.io/badge/runtime_dependencies-none-brightgreen)
 
-## 概要
+Auto URL Fixer は、クリップボードにコピーされた URL を監視し、Discord などで展開しやすい fixer 系 URL へ自動変換する Windows 向けツールです。
 
-- クリップボード内のテキストから URL を検出
-- 対応サービスのホスト名だけを変換
-- 複数 URL を含むテキストにも対応
-- Python を別途インストールしなくても `.exe` 配布で利用可能
-- `Auto URL Fixer.exe` だけで起動 / 停止 / スタートアップ ON / OFF を操作可能
-- 監視本体はターミナルを表示せずにバックグラウンド実行
-- 変換ルールは `config.example.json` をもとにカスタマイズ可能
+通常利用では Python のインストールは不要です。配布フォルダ内の `Auto URL Fixer.exe` だけで、監視の起動・停止・スタートアップ ON/OFF を操作できます。
+
+## 目次
+
+1. [特徴](#特徴)
+2. [クイックスタート](#クイックスタート)
+3. [使い方](#使い方)
+4. [変換ルール](#変換ルール)
+5. [設定ファイル](#設定ファイル)
+6. [コマンド一覧](#コマンド一覧)
+7. [ディレクトリ構成](#ディレクトリ構成)
+8. [開発・ビルド](#開発ビルド)
+9. [トラブルシューティング](#トラブルシューティング)
+10. [参考](#参考)
+
+## 特徴
+
+- クリップボード内のテキストから URL を検出します。
+- 対応サービスのホスト名だけを fixer 系ホストへ変換します。
+- 複数 URL を含むテキストにも対応します。
+- 操作パネルから `Start` / `Stop` / `Startup ON` / `Startup OFF` を実行できます。
+- 監視プロセスはターミナルを表示せずにバックグラウンドで動作します。
+- 配布版は PyInstaller の `onedir` 形式で作成し、`_MEI...` 一時フォルダ警告を避けます。
+- 設定ファイルを追加すると、変換先や有効/無効のルールを変更できます。
 
 ## クイックスタート
 
-通常利用では Python は不要です。配布フォルダ `dist\Auto URL Fixer\` 内の `Auto URL Fixer.exe` を開くと操作パネルが表示されます。
-
-操作パネルから次の操作ができます。
-
-- `Start`: クリップボード監視を開始
-- `Stop`: クリップボード監視を停止
-- `Startup ON`: Windows ログイン時の自動起動を有効化
-- `Startup OFF`: スタートアップ登録を解除
-
-開発中に Python で直接起動する場合:
-
-```powershell
-py -m auto_url_fixer --watch
-```
-
-起動後、たとえば次の URL をコピーすると、
+配布フォルダ `dist\Auto URL Fixer\` の中にある `Auto URL Fixer.exe` を起動してください。
 
 ```text
-https://twitter.com/example/status/123
+dist\Auto URL Fixer\Auto URL Fixer.exe
 ```
 
-クリップボード内容が次のように置き換わります。
+操作パネルが開いたら、`Start` を押すとクリップボード監視が始まります。たとえば次の URL をコピーすると、
+
+```text
+https://x.com/example/status/123
+```
+
+クリップボードの内容が次のように置き換わります。
 
 ```text
 https://fxtwitter.com/example/status/123
 ```
 
-## 同梱ファイル
+## 使い方
 
-- `Auto URL Fixer.exe`: Python 不要で実行できる Windows 配布用実行ファイル
-- `config.example.json`: 設定ファイルのサンプル
+| 操作 | 内容 |
+| --- | --- |
+| `Start` | クリップボード監視をバックグラウンドで開始します。 |
+| `Stop` | 実行中の監視プロセスへ停止要求を送ります。 |
+| `Startup ON` | Windows ログイン時に監視を自動開始するよう登録します。 |
+| `Startup OFF` | スタートアップ登録を解除します。 |
 
-配布フォルダでは基本的に `Auto URL Fixer.exe` だけを操作します。`_internal` フォルダは exe の実行に必要なので、削除せず同じ場所に置いてください。設定を変更したい場合だけ `config.example.json` を `config.json` にコピーしてください。
+Status 表示は定期的に更新されます。`Status: Running` なら監視中、`Status: Stopped` なら停止中です。
 
-`dist\Auto URL Fixer.exe` のように `dist` 直下に単体 exe がある場合、それは古い `onefile` 版です。終了時に `Failed to remove temporary directory: ...\_MEI...` の警告が出る原因になるため、使わずに削除してください。
+スタートアップ登録は Windows の Startup フォルダに `Auto URL Fixer.vbs` を作成します。この VBS は `Auto URL Fixer.exe --watch` を非表示で実行します。
 
-## 設定ファイル
+## 変換ルール
 
-配布版で設定を変更したい場合は、`Auto URL Fixer.exe` と同じフォルダに設定ファイルを置きます。
-
-```powershell
-Copy-Item config.example.json config.json
-```
-
-`config.json` が同じフォルダにある場合、操作パネルの `Start` やスタートアップ起動でも自動的に読み込まれます。
-
-開発中に任意の設定ファイルを指定して起動する場合:
-
-```powershell
-py -m auto_url_fixer --watch --config config.json
-```
-
-設定例:
-
-```json
-{
-  "name": "X / Twitter to FxTwitter",
-  "enabled": true,
-  "hosts": ["twitter.com", "www.twitter.com", "mobile.twitter.com"],
-  "target_host": "fxtwitter.com"
-}
-```
-
-`enabled` を `false` にすると、そのルールは使われません。
-
-主な設定項目:
-
-- `poll_interval_seconds`: クリップボード監視間隔
-- `log_rewrites`: 変換内容をログ出力するかどうか
-- `rules`: 変換ルール一覧
-
-## 既定で有効な変換
+既定で有効な変換は次の通りです。
 
 | 対象 | 変換例 |
 | --- | --- |
@@ -95,44 +77,155 @@ py -m auto_url_fixer --watch --config config.json
 | TikTok | `tiktok.com` -> `tnktok.com` |
 | Reddit | `reddit.com` -> `rxddit.com` |
 | Tumblr | `tumblr.com` -> `tpmblr.com` |
+| Tumblr サブドメイン | `staff.tumblr.com` -> `staff.tpmblr.com` |
 | Bluesky | `bsky.app` -> `fxbsky.app` |
 
-追加候補として `tfxktok.com`, `tiktokez.com`, `rxyddit.com`, `instagramez.com`, `fixthreads.net`, `fxtwitch.tv` などのルールも `config.example.json` に含めていますが、初期状態では `enabled: false` にしています。
+`config.example.json` には追加候補として `tfxktok.com`, `tiktokez.com`, `rxyddit.com`, `instagramez.com`, `fixthreads.net`, `fxtwitch.tv` などのルールも含めています。初期状態では `enabled: false` です。
 
-## 停止とスタートアップ
+## 設定ファイル
 
-- `Auto URL Fixer.exe` を開くと操作パネルが表示されます。
-- `Start` は同じ exe を `--watch` でバックグラウンド起動します。
-- `Stop` は停止要求を送り、必要に応じて監視プロセスを終了します。
-- PID ファイルが無い古い起動でも停止できるようにしています。
-- スタートアップ有効化時は、Windows の Startup フォルダに `Auto URL Fixer.exe --watch` を非表示で起動する `vbs` エントリを作成します。
-
-## 配布用ビルド
-
-開発者向けに、Windows 配布用 `.exe` を作るバッチを同梱しています。
+設定を変更したい場合は、`Auto URL Fixer.exe` と同じフォルダに `config.json` を置きます。
 
 ```powershell
-build_windows_exe.bat
+Copy-Item config.example.json config.json
 ```
 
-成功すると `dist\Auto URL Fixer\` に次の配布セットを出力します。
+`config.json` が同じフォルダにある場合、操作パネルの `Start` やスタートアップ起動でも自動的に読み込まれます。
 
-- `Auto URL Fixer.exe`
-- `_internal`
-- `config.example.json`
-- `README.md`
+設定例:
 
-ビルド時に古い `dist\Auto URL Fixer.exe` が残っている場合は自動削除します。利用する exe は必ず `dist\Auto URL Fixer\Auto URL Fixer.exe` です。
+```json
+{
+  "poll_interval_seconds": 0.5,
+  "log_rewrites": true,
+  "rules": [
+    {
+      "name": "X / Twitter to FxTwitter",
+      "enabled": true,
+      "hosts": ["twitter.com", "www.twitter.com", "mobile.twitter.com"],
+      "target_host": "fxtwitter.com"
+    }
+  ]
+}
+```
 
-## テスト
+| 項目 | 内容 |
+| --- | --- |
+| `poll_interval_seconds` | クリップボードを確認する間隔です。 |
+| `log_rewrites` | 変換内容をログ出力するかどうかです。 |
+| `rules` | 変換ルールの一覧です。 |
+| `enabled` | `false` にすると、そのルールは使われません。 |
+| `hosts` | 変換元のホスト名です。 |
+| `target_host` | 変換先のホスト名です。 |
+| `host_suffix` | サブドメインをまとめて変換する場合の変換元サフィックスです。 |
+| `target_suffix` | サブドメインをまとめて変換する場合の変換先サフィックスです。 |
+
+## コマンド一覧
+
+配布版 exe では、次のコマンドを利用できます。
+
+| コマンド | 内容 |
+| --- | --- |
+| `Auto URL Fixer.exe` | 操作パネルを開きます。 |
+| `Auto URL Fixer.exe --watch` | 現在のプロセスで監視を開始します。 |
+| `Auto URL Fixer.exe --start` | 監視プロセスをバックグラウンド起動します。 |
+| `Auto URL Fixer.exe --stop` | 実行中の監視プロセスを停止します。 |
+| `Auto URL Fixer.exe --enable-startup` | スタートアップを有効化します。 |
+| `Auto URL Fixer.exe --disable-startup` | スタートアップを無効化します。 |
+
+開発中に Python で直接実行する場合は、次の形式でも操作できます。
+
+```powershell
+py -m auto_url_fixer --watch
+py -m auto_url_fixer --start
+py -m auto_url_fixer --stop
+py -m auto_url_fixer --once
+py -m auto_url_fixer --watch --config config.json
+```
+
+## ディレクトリ構成
+
+```text
+.
+├── auto_url_fixer/
+│   ├── __main__.py
+│   ├── cli.py
+│   ├── clipboard.py
+│   ├── config.py
+│   ├── control_panel.py
+│   ├── rewriter.py
+│   ├── runtime.py
+│   └── watcher.py
+├── tests/
+│   ├── test_rewriter.py
+│   └── test_runtime.py
+├── auto_url_fixer.spec
+├── build_windows_exe.bat
+├── config.example.json
+├── pyproject.toml
+└── README.md
+```
+
+| パス | 役割 |
+| --- | --- |
+| `auto_url_fixer/cli.py` | コマンドライン引数と起動処理です。 |
+| `auto_url_fixer/control_panel.py` | Tkinter 製の操作パネルです。 |
+| `auto_url_fixer/runtime.py` | 起動、停止、PID管理、スタートアップ登録を扱います。 |
+| `auto_url_fixer/watcher.py` | クリップボード監視ループです。 |
+| `auto_url_fixer/rewriter.py` | URL 変換処理です。 |
+| `config.example.json` | 設定ファイルのサンプルです。 |
+| `build_windows_exe.bat` | Windows 配布用 exe を作成するバッチです。 |
+
+## 開発・ビルド
+
+開発には Python 3.10 以上を使用します。通常利用だけなら Python は不要ですが、テストや exe の再ビルドには Python が必要です。
+
+テスト:
 
 ```powershell
 py -m unittest discover -s tests
 ```
 
-## 補足
+配布用 exe のビルド:
 
-- すでに別の Auto URL Fixer が動いている場合、新しい起動は多重起動を避けるため失敗します。
-- バックグラウンド起動時は標準出力が見えないため、必要ならターミナル起動で動作確認してください。
-- 配布用 `Auto URL Fixer.exe` は `console=False` でビルドするため、直接実行してもターミナルは表示されません。
-- PyInstaller の一時展開フォルダ削除エラーを避けるため、配布版は `onefile` ではなく `onedir` 形式でビルドします。
+```powershell
+build_windows_exe.bat
+```
+
+成功すると `dist\Auto URL Fixer\` に次の配布セットが出力されます。
+
+```text
+dist\Auto URL Fixer\
+├── Auto URL Fixer.exe
+├── _internal\
+├── config.example.json
+└── README.md
+```
+
+`_internal` フォルダは exe の実行に必要です。削除せず、`Auto URL Fixer.exe` と同じ場所に置いてください。
+
+## トラブルシューティング
+
+### `Failed to remove temporary directory: ...\_MEI...` が出る
+
+古い `onefile` 版 exe を実行している可能性があります。`dist\Auto URL Fixer.exe` のように `dist` 直下に単体 exe がある場合は使わず、`dist\Auto URL Fixer\Auto URL Fixer.exe` を使ってください。
+
+### `Stop` を押しても `No running instance was found.` と表示される
+
+古い exe や別の場所の exe から起動した監視プロセスが残っている可能性があります。新しい `dist\Auto URL Fixer\Auto URL Fixer.exe` から起動し直してください。スタートアップ登録済みの場合は、`Startup OFF` の後に `Startup ON` を押して登録先を更新してください。
+
+### `Status` が `Running` に変わらない
+
+監視プロセスの起動に失敗している可能性があります。`Failed to start.` が表示される場合は、配布フォルダに `_internal` が残っているか確認してください。また、古い単体 exe ではなく `dist\Auto URL Fixer\Auto URL Fixer.exe` を起動してください。
+
+### `Build virtual environment is broken.` と表示される
+
+`.venv` が古い Python インストール先を参照している可能性があります。Python をインストールした上で `.venv` フォルダを削除し、`build_windows_exe.bat` を再実行してください。
+
+### 変換されない URL がある
+
+`config.json` を使っている場合、該当ルールの `enabled` が `true` になっているか確認してください。また、対象ホストが `hosts` または `host_suffix` に含まれている必要があります。
+
+## 参考
+
+- [全プロジェクトで重宝されるイケてるREADMEを作成しよう！](https://qiita.com/shun198/items/c983c713452c041ef787)
