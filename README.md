@@ -81,4 +81,14 @@ py -m unittest discover -s tests
 
 ## ダブルクリックで起動
 
-`start_auto_url_fixer.bat` をダブルクリックすると、既定ルールで監視を開始します。
+ターミナルを表示せずに起動したい場合は `start_auto_url_fixer.vbs` をダブルクリックしてください。
+
+`start_auto_url_fixer.bat` も同じ非表示起動用ランチャーを呼び出すので、従来どおり使えます。
+
+## 停止とスタートアップ
+
+実行中の Auto URL Fixer を止めるには `stop_auto_url_fixer.bat` を実行してください。
+通常は停止要求を送って終了し、反応しない場合は保存済み PID を使って強制停止します。
+
+Windows ログイン時に自動起動したい場合は `enable_startup_auto_url_fixer.bat` を実行してください。
+スタートアップ登録を解除したい場合は `disable_startup_auto_url_fixer.bat` を実行してください.
