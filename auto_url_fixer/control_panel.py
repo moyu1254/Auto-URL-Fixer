@@ -31,20 +31,25 @@ def run_control_panel() -> int:
     def refresh_status() -> None:
         status_var.set("Status: Running" if is_running_instance() else "Status: Stopped")
 
+    def refresh_status_after_process_change() -> None:
+        refresh_status()
+        root.after(500, refresh_status)
+        root.after(1500, refresh_status)
+
     def start() -> None:
         if start_watcher_instance():
-            refresh_status()
+            refresh_status_after_process_change()
             messagebox.showinfo("Auto URL Fixer", "Started.")
         else:
-            refresh_status()
+            refresh_status_after_process_change()
             messagebox.showinfo("Auto URL Fixer", "Already running.")
 
     def stop() -> None:
         if stop_running_instance():
-            refresh_status()
+            refresh_status_after_process_change()
             messagebox.showinfo("Auto URL Fixer", "Stopped.")
         else:
-            refresh_status()
+            refresh_status_after_process_change()
             messagebox.showinfo("Auto URL Fixer", "No running instance was found.")
 
     def startup_on() -> None:
