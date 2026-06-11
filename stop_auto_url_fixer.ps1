@@ -3,6 +3,8 @@ param()
 $runtimeDir = Join-Path $env:LOCALAPPDATA "AutoURLFixer"
 $pidFile = Join-Path $runtimeDir "auto_url_fixer.pid"
 $stopFile = Join-Path $runtimeDir "stop.flag"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$expectedExePath = Join-Path $scriptDir "Auto URL Fixer.exe"
 
 New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
 New-Item -ItemType File -Force -Path $stopFile | Out-Null
@@ -18,7 +20,9 @@ if (Test-Path $pidFile) {
 }
 
 $processes = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
-    $_.CommandLine -and $_.CommandLine -match '(?i)(^| )(-m +auto_url_fixer|auto_url_fixer[/\\]__main__\.py)'
+    ($_.CommandLine -and $_.CommandLine -match '(?i)(^| )(-m +auto_url_fixer|auto_url_fixer[/\\]__main__\.py)') -or
+    ($_.ExecutablePath -and [System.StringComparer]::OrdinalIgnoreCase.Equals($_.ExecutablePath, $expectedExePath)) -or
+    $_.Name -match '^(?i:auto url fixer|auto-url-fixer|auto_url_fixer)\.exe$'
 }
 
 foreach ($process in $processes) {
