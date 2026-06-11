@@ -8,34 +8,25 @@
 - 対応サービスのホスト名だけを変換
 - 複数 URL を含むテキストにも対応
 - Python を別途インストールしなくても `.exe` 配布で利用可能
-- 起動 / 停止 / スタートアップ ON / OFF をターミナル表示なしで実行可能
-- `Auto URL Fixer.exe` を中心に運用可能
+- `Auto URL Fixer.exe` だけで起動 / 停止 / スタートアップ ON / OFF を操作可能
+- 監視本体はターミナルを表示せずにバックグラウンド実行
 - 変換ルールは `config.example.json` をもとにカスタマイズ可能
 
 ## クイックスタート
 
-通常利用では Python は不要です。配布フォルダ内の `Auto URL Fixer.exe` と同梱の `vbs` ランチャーをそのまま使えます。
+通常利用では Python は不要です。配布フォルダ内の `Auto URL Fixer.exe` を開くと操作パネルが表示されます。
 
-配布版をバックグラウンド起動する場合:
+操作パネルから次の操作ができます。
 
-`start_auto_url_fixer.vbs` をダブルクリックしてください。
-
-停止する場合:
-
-`stop_auto_url_fixer.vbs` をダブルクリックしてください。
-
-スタートアップを有効化する場合:
-
-`enable_startup_auto_url_fixer.vbs` をダブルクリックしてください。
-
-スタートアップを無効化する場合:
-
-`disable_startup_auto_url_fixer.vbs` をダブルクリックしてください。
+- `Start`: クリップボード監視を開始
+- `Stop`: クリップボード監視を停止
+- `Startup ON`: Windows ログイン時の自動起動を有効化
+- `Startup OFF`: スタートアップ登録を解除
 
 開発中に Python で直接起動する場合:
 
 ```powershell
-py -m auto_url_fixer
+py -m auto_url_fixer --watch
 ```
 
 起動後、たとえば次の URL をコピーすると、
@@ -50,34 +41,27 @@ https://twitter.com/example/status/123
 https://fxtwitter.com/example/status/123
 ```
 
-停止方法:
-
-- ターミナル起動中は `Ctrl+C`
-- バックグラウンド起動中は `stop_auto_url_fixer.vbs`
-
 ## 同梱ファイル
 
 - `Auto URL Fixer.exe`: Python 不要で実行できる Windows 配布用実行ファイル
-- `start_auto_url_fixer.vbs`: ターミナルを表示せずに起動
-- `stop_auto_url_fixer.vbs`: ターミナルを表示せずに停止
-- `enable_startup_auto_url_fixer.vbs`: ターミナルを表示せずにスタートアップ登録
-- `disable_startup_auto_url_fixer.vbs`: ターミナルを表示せずにスタートアップ解除
 - `config.example.json`: 設定ファイルのサンプル
 
-補助的に `.bat` / `.ps1` も同梱していますが、通常は `exe` と `vbs` 側を使えば十分です。
+配布フォルダは基本的にこの 2 ファイルだけで使えます。設定を変更したい場合だけ `config.example.json` を `config.json` にコピーしてください。`README.md` は必要に応じて同梱してください。
 
 ## 設定ファイル
 
-まずサンプル設定をコピーします。
+配布版で設定を変更したい場合は、`Auto URL Fixer.exe` と同じフォルダに設定ファイルを置きます。
 
 ```powershell
 Copy-Item config.example.json config.json
 ```
 
-設定を指定して起動します。
+`config.json` が同じフォルダにある場合、操作パネルの `Start` やスタートアップ起動でも自動的に読み込まれます。
+
+開発中に任意の設定ファイルを指定して起動する場合:
 
 ```powershell
-py -m auto_url_fixer --config config.json
+py -m auto_url_fixer --watch --config config.json
 ```
 
 設定例:
@@ -115,11 +99,11 @@ py -m auto_url_fixer --config config.json
 
 ## 停止とスタートアップ
 
-- `Auto URL Fixer.exe --stop` で停止、`--enable-startup` でスタートアップ有効化、`--disable-startup` で解除できます。
-- 同梱の各 `vbs` ファイルは、これらの引数付き `exe` 実行をターミナル非表示で呼び出すためのランチャーです。
-- `stop_auto_url_fixer.vbs` は、まず停止要求を送り、その後 `Auto URL Fixer.exe` または `auto_url_fixer` を実行中のプロセスを探して停止します。
+- `Auto URL Fixer.exe` を開くと操作パネルが表示されます。
+- `Start` は同じ exe を `--watch` でバックグラウンド起動します。
+- `Stop` は停止要求を送り、必要に応じて監視プロセスを終了します。
 - PID ファイルが無い古い起動でも停止できるようにしています。
-- スタートアップ有効化時は、Windows の Startup フォルダに非表示起動用の `vbs` エントリを作成します。
+- スタートアップ有効化時は、Windows の Startup フォルダに `Auto URL Fixer.exe --watch` を非表示で起動する `vbs` エントリを作成します。
 
 ## 配布用ビルド
 
@@ -132,7 +116,6 @@ build_windows_exe.bat
 成功すると `dist\Auto URL Fixer\` に次の配布セットを出力します。
 
 - `Auto URL Fixer.exe`
-- 起動 / 停止 / スタートアップ操作用の `.vbs` / `.bat` / `.ps1`
 - `config.example.json`
 - `README.md`
 
@@ -146,5 +129,4 @@ py -m unittest discover -s tests
 
 - すでに別の Auto URL Fixer が動いている場合、新しい起動は多重起動を避けるため失敗します。
 - バックグラウンド起動時は標準出力が見えないため、必要ならターミナル起動で動作確認してください。
-- `start_auto_url_fixer.vbs` は `Auto URL Fixer.exe` を最優先で起動し、見つからない場合だけ開発用に Python 実行へフォールバックします。
 - 配布用 `Auto URL Fixer.exe` は `console=False` でビルドするため、直接実行してもターミナルは表示されません。
