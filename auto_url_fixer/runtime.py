@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import os
+import signal
+import subprocess
+import sys
+import time
+from csv import reader
 from pathlib import Path
 
 
 APP_DIR_NAME = "AutoURLFixer"
 PID_FILE_NAME = "auto_url_fixer.pid"
 STOP_FILE_NAME = "stop.flag"
+STARTUP_ENTRY_NAME = "Auto URL Fixer.vbs"
 
 
 class AlreadyRunningError(RuntimeError):
@@ -88,3 +94,142 @@ def is_process_running(pid: int) -> bool:
     except OSError:
         return False
     return True
+
+
+def stop_running_instance(timeout_seconds: float = 2.0) -> bool:
+    request_stop()
+
+    target_pids = _collect_target_pids()
+    if not target_pids:
+        clear_stop_request()
+        return False
+
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        if not any(is_process_running(pid) for pid in target_pids):
+            clear_stop_request()
+            unregister_current_process()
+            return True
+        time.sleep(0.1)
+
+    for pid in target_pids:
+        if is_process_running(pid):
+            _terminate_process(pid)
+
+    clear_stop_request()
+    unregister_current_process()
+    return not any(is_process_running(pid) for pid in target_pids)
+
+
+def enable_startup() -> Path:
+    startup_path = get_startup_entry_path()
+    startup_path.parent.mkdir(parents=True, exist_ok=True)
+    startup_path.write_text(build_startup_vbs(), encoding="utf-8")
+    return startup_path
+
+
+def disable_startup() -> bool:
+    startup_path = get_startup_entry_path()
+    if startup_path.exists():
+        startup_path.unlink()
+        return True
+    return False
+
+
+def get_startup_entry_path() -> Path:
+    appdata = os.environ.get("APPDATA")
+    if appdata:
+        base_dir = Path(appdata)
+    else:
+        base_dir = Path.home() / "AppData" / "Roaming"
+    return base_dir / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / STARTUP_ENTRY_NAME
+
+
+def build_startup_vbs() -> str:
+    command = get_hidden_launch_command()
+    working_dir = get_application_dir()
+    escaped_dir = str(working_dir).replace('"', '""')
+    escaped_command = command.replace('"', '""')
+    return (
+        'Set shell = CreateObject("WScript.Shell")\n'
+        f'shell.CurrentDirectory = "{escaped_dir}"\n'
+        f'shell.Run "{escaped_command}", 0, False\n'
+    )
+
+
+def get_application_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent.parent
+
+
+def get_hidden_launch_command(extra_args: tuple[str, ...] = ()) -> str:
+    if getattr(sys, "frozen", False):
+        command = f'"{Path(sys.executable).resolve()}"'
+        if extra_args:
+            command = " ".join((command, *extra_args))
+        return command
+
+    base_command = (
+        'cmd /c "where pyw >nul 2>nul && pyw -3 -m auto_url_fixer'
+        ' || where pythonw >nul 2>nul && pythonw -m auto_url_fixer'
+        ' || where py >nul 2>nul && py -3 -m auto_url_fixer'
+        ' || python -m auto_url_fixer'
+    )
+    if extra_args:
+        base_command += " " + " ".join(extra_args)
+    return base_command + '"'
+
+
+def _collect_target_pids() -> set[int]:
+    target_pids: set[int] = set()
+    current_pid = os.getpid()
+
+    pid = read_pid()
+    if pid is not None and pid != current_pid and is_process_running(pid):
+        target_pids.add(pid)
+
+    if getattr(sys, "frozen", False):
+        image_name = Path(sys.executable).name
+        for candidate_pid in _list_process_ids_by_image_name(image_name):
+            if candidate_pid != current_pid:
+                target_pids.add(candidate_pid)
+
+    return target_pids
+
+
+def _list_process_ids_by_image_name(image_name: str) -> set[int]:
+    create_no_window = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    try:
+        result = subprocess.run(
+            ["tasklist", "/FO", "CSV", "/NH"],
+            capture_output=True,
+            text=True,
+            check=False,
+            creationflags=create_no_window,
+        )
+    except OSError:
+        return set()
+
+    if result.returncode != 0:
+        return set()
+
+    target_name = image_name.lower()
+    pids: set[int] = set()
+    for row in reader(result.stdout.splitlines()):
+        if len(row) < 2:
+            continue
+        if row[0].lower() != target_name:
+            continue
+        try:
+            pids.add(int(row[1]))
+        except ValueError:
+            continue
+    return pids
+
+
+def _terminate_process(pid: int) -> None:
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError:
+        pass
