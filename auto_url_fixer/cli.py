@@ -10,7 +10,9 @@ from .runtime import (
     AlreadyRunningError,
     disable_startup,
     enable_startup,
+    get_application_dir,
     register_current_process,
+    start_watcher_instance,
     stop_requested,
     stop_running_instance,
     unregister_current_process,
@@ -49,6 +51,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable Auto URL Fixer at Windows logon.",
     )
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Run the clipboard watcher in the current process.",
+    )
+    parser.add_argument(
+        "--start",
+        action="store_true",
+        help="Start a background watcher process.",
+    )
     return parser
 
 
@@ -74,7 +86,18 @@ def main(argv: list[str] | None = None) -> int:
             _safe_print("No startup entry was found.")
         return 0
 
-    config = load_config(args.config)
+    if args.start:
+        started = start_watcher_instance(args.config)
+        if not started:
+            _safe_print("Auto URL Fixer is already running.")
+        return 0
+
+    if not args.watch and not args.once:
+        from .control_panel import run_control_panel
+
+        return run_control_panel()
+
+    config = load_config(_resolve_config_path(args.config))
 
     try:
         clipboard = create_clipboard()
@@ -124,3 +147,14 @@ def _safe_print(message: str) -> None:
     if stream is None:
         return
     print(message, file=stream)
+
+
+def _resolve_config_path(path: Path | None) -> Path | None:
+    if path is not None:
+        return path
+
+    app_config = get_application_dir() / "config.json"
+    if app_config.exists():
+        return app_config
+
+    return None
