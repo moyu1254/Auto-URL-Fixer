@@ -1,9 +1,6 @@
 # Auto URL Fixer
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white)
-![PyInstaller](https://img.shields.io/badge/PyInstaller-onedir-2B5B84)
-![Dependencies](https://img.shields.io/badge/runtime_dependencies-none-brightgreen)
 
 Auto URL Fixer は、クリップボードにコピーされた URL を監視し、Discord などで展開しやすい fixer 系 URL へ自動変換する Windows 向けツールです。
 
